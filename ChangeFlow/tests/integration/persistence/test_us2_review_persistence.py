@@ -1,9 +1,11 @@
+import pytest
 from sqlalchemy.orm import Session, sessionmaker
 
 from changeflow.application.change_requests.approve import approve_change_request
 from changeflow.application.change_requests.create import create_change_request
 from changeflow.application.change_requests.request_changes import request_changes
 from changeflow.application.change_requests.submit import submit_change_request
+from changeflow.application.errors import ValidationFailedError
 from changeflow.application.ports.current_user_role_store import CurrentUser
 from changeflow.domain.change_requests.enums import Role
 from changeflow.domain.change_requests.values import ChangeRequestContent
@@ -66,3 +68,29 @@ def test_approval_is_persisted(
     )
     uow.close()
     assert approved.status.value == "Approved"
+
+
+def test_blank_feedback_leaves_version_status_and_history_unchanged(
+    session_factory: sessionmaker[Session],
+    seed_user,
+) -> None:
+    seed_user("requester-1", {Role.REQUESTER})
+    seed_user("reviewer-1", {Role.REVIEWER})
+    _, pending = pending_request(session_factory)
+    reviewer = CurrentUser("reviewer-1", frozenset({Role.REVIEWER}))
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    with pytest.raises(ValidationFailedError):
+        request_changes(
+            uow,
+            reviewer,
+            pending.id,  # type: ignore[attr-defined]
+            pending.version,  # type: ignore[attr-defined]
+            "   ",
+        )
+    persisted = uow.requests.get(pending.id)  # type: ignore[attr-defined]
+    history = uow.requests.list_transitions(pending.id)  # type: ignore[attr-defined]
+    uow.close()
+    assert persisted is not None
+    assert persisted.version == pending.version  # type: ignore[attr-defined]
+    assert persisted.status.value == "PendingReview"
+    assert [item.action.value for item in history] == ["Submit"]

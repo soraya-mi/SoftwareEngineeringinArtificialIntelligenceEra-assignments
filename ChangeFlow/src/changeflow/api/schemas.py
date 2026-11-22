@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -107,11 +108,25 @@ class ChangeRequestHistoryResponse(ApiModel):
     items: list[ChangeRequestTransitionResponse]
 
 
+class ErrorCode(StrEnum):
+    AUTHENTICATION_REQUIRED = "AUTHENTICATION_REQUIRED"
+    AUTHORIZATION_DENIED = "AUTHORIZATION_DENIED"
+    SELF_APPROVAL_FORBIDDEN = "SELF_APPROVAL_FORBIDDEN"
+    VALIDATION_FAILED = "VALIDATION_FAILED"
+    RESOURCE_NOT_FOUND = "RESOURCE_NOT_FOUND"
+    INVALID_WORKFLOW = "INVALID_WORKFLOW"
+    CONCURRENCY_CONFLICT = "CONCURRENCY_CONFLICT"
+    PRECONDITION_REQUIRED = "PRECONDITION_REQUIRED"
+    DELETION_NOT_SUPPORTED = "DELETION_NOT_SUPPORTED"
+    INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR"
+    HTTP_ERROR = "HTTP_ERROR"
+
+
 class ProblemDetails(ApiModel):
     type: str = "about:blank"
     title: str
     status: int
     detail: str | None = None
     instance: str | None = None
-    code: str
+    code: ErrorCode
     currentVersion: UUID | None = None

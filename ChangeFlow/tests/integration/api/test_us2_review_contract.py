@@ -63,3 +63,20 @@ def test_owner_may_request_changes_on_own_request(app: object) -> None:
         assert response.status_code == 200
         history = dual_role.get(f"/api/change-requests/{pending['id']}/history").json()
         assert history["items"][-1]["comment"] == "  retain this text  "
+
+
+def test_repeated_approval_is_invalid_and_creates_no_duplicate(app: object) -> None:
+    pending = create_pending(app, "requester-1")
+    with client_for_user(app, "reviewer-1", {Role.REVIEWER}) as reviewer:
+        approved = reviewer.post(
+            f"/api/change-requests/{pending['id']}/approve",
+            headers={"If-Match": etag(pending)},
+        ).json()
+        repeated = reviewer.post(
+            f"/api/change-requests/{pending['id']}/approve",
+            headers={"If-Match": etag(approved)},
+        )
+        history = reviewer.get(f"/api/change-requests/{pending['id']}/history").json()
+        assert repeated.status_code == 409
+        assert repeated.json()["code"] == "INVALID_WORKFLOW"
+        assert [item["action"] for item in history["items"]] == ["Submit", "Approve"]

@@ -329,3 +329,12 @@ After Foundation, one developer may take each story. Coordinate shared-file work
 `src/changeflow/api/schemas.py`, and
 `src/changeflow/api/routes/change_requests.py`; tasks touching those files are
 intentionally not parallelized.
+
+## Phase 8: Convergence
+
+- [ ] T077 Add a repeated approval contract test proving an Approved request returns `409 INVALID_WORKFLOW` and creates no additional transition in `tests/integration/api/test_us2_review_contract.py` per FR-019/T040 (partial)
+- [ ] T078 Declare success ETag headers and Problem Details error responses in `src/changeflow/api/routes/change_requests.py`, then expand `tests/integration/api/test_openapi_conformance.py` to compare operations, schemas, error codes, If-Match, and ETag definitions with `specs/001-change-request-workflow/contracts/openapi.json` per FR-022/T072 (partial)
+- [ ] T079 Add a JWKS resolver failure test proving `JwtVerifier` returns an authentication error in `tests/unit/infrastructure/test_jwt_verifier.py` per FR-001/T012 (partial)
+- [ ] T080 Add a persisted-state test proving blank review feedback leaves request version, status, and transition history unchanged in `tests/integration/persistence/test_us2_review_persistence.py` per FR-025/FR-026/T041 (partial)
+- [ ] T081 Add tests proving both Approved content edits and Approved submissions return `409 INVALID_WORKFLOW` without changing version, content, status, revisions, or history in `tests/integration/api/test_us3_approved_immutability.py` per FR-015/T062 (partial)
+- [ ] T082 Add API authentication-negative tests for expired tokens, wrong issuer/audience, and unknown or inactive users in `tests/integration/api/test_us1_access_and_delete.py` per FR-001/T025 (partial)

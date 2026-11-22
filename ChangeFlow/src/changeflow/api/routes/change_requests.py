@@ -1,3 +1,4 @@
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Response, status
@@ -14,6 +15,7 @@ from changeflow.api.schemas import (
     ChangeRequestResponse,
     ChangeRequestTransitionResponse,
     CreateChangeRequestRequest,
+    ProblemDetails,
     RequestChangesRequest,
     UpdateChangeRequestContentRequest,
 )
@@ -34,6 +36,44 @@ from changeflow.domain.change_requests.values import ChangeRequestContent
 
 router = APIRouter(prefix="/api/change-requests", tags=["Change Requests"])
 
+_PROBLEM_CONTENT = {
+    "application/problem+json": {
+        "schema": {"$ref": "#/components/schemas/ProblemDetails"}
+    }
+}
+_ERROR_DESCRIPTIONS = {
+    400: "Invalid request content",
+    401: "Authentication required",
+    403: "Authorization denied",
+    404: "Change Request not found",
+    405: "Request deletion is not supported",
+    409: "Invalid workflow or concurrency conflict",
+    428: "If-Match precondition required",
+}
+_ETAG_HEADER = {
+    "description": "Current Change Request concurrency token as a quoted UUID.",
+    "schema": {"type": "string"},
+}
+
+
+def _responses(
+    success_status: int,
+    error_statuses: tuple[int, ...],
+    *,
+    etag: bool,
+) -> dict[int | str, dict[str, Any]]:
+    responses: dict[int | str, dict[str, Any]] = {
+        status: {
+            "model": ProblemDetails,
+            "description": _ERROR_DESCRIPTIONS[status],
+            "content": _PROBLEM_CONTENT,
+        }
+        for status in error_statuses
+    }
+    if etag:
+        responses[success_status] = {"headers": {"ETag": _ETAG_HEADER}}
+    return responses
+
 
 def _response(
     request: object, response: Response
@@ -47,6 +87,7 @@ def _response(
     "",
     response_model=ChangeRequestListResponse,
     operation_id="listVisibleChangeRequests",
+    responses=_responses(200, (401, 403), etag=False),
 )
 def list_requests(
     user: CurrentUserDependency,
@@ -63,6 +104,7 @@ def list_requests(
     response_model=ChangeRequestResponse,
     status_code=status.HTTP_201_CREATED,
     operation_id="createChangeRequest",
+    responses=_responses(201, (400, 401, 403), etag=True),
 )
 def create_request(
     payload: CreateChangeRequestRequest,
@@ -84,6 +126,7 @@ def create_request(
     "/{request_id}",
     response_model=ChangeRequestResponse,
     operation_id="getChangeRequest",
+    responses=_responses(200, (401, 403, 404), etag=True),
 )
 def get_request(
     request_id: UUID,
@@ -99,6 +142,7 @@ def get_request(
     "/{request_id}",
     status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
     operation_id="deleteChangeRequest",
+    responses=_responses(405, (401, 405), etag=False),
 )
 def delete_request(
     request_id: UUID,
@@ -112,6 +156,7 @@ def delete_request(
     "/{request_id}/content",
     response_model=ChangeRequestResponse,
     operation_id="updateChangeRequestContent",
+    responses=_responses(200, (400, 401, 403, 404, 409, 428), etag=True),
 )
 def update_content(
     request_id: UUID,
@@ -136,6 +181,7 @@ def update_content(
     "/{request_id}/submit",
     response_model=ChangeRequestResponse,
     operation_id="submitChangeRequest",
+    responses=_responses(200, (401, 403, 404, 409, 428), etag=True),
 )
 def submit_request(
     request_id: UUID,
@@ -152,6 +198,7 @@ def submit_request(
     "/{request_id}/approve",
     response_model=ChangeRequestResponse,
     operation_id="approveChangeRequest",
+    responses=_responses(200, (401, 403, 404, 409, 428), etag=True),
 )
 def approve_request(
     request_id: UUID,
@@ -168,6 +215,7 @@ def approve_request(
     "/{request_id}/request-changes",
     response_model=ChangeRequestResponse,
     operation_id="requestChangeRequestChanges",
+    responses=_responses(200, (400, 401, 403, 404, 409, 428), etag=True),
 )
 def request_change_request(
     request_id: UUID,
@@ -191,6 +239,7 @@ def request_change_request(
     "/{request_id}/history",
     response_model=ChangeRequestHistoryResponse,
     operation_id="getChangeRequestHistory",
+    responses=_responses(200, (401, 403, 404), etag=False),
 )
 def get_history(
     request_id: UUID,

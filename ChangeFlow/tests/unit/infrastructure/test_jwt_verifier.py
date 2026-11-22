@@ -75,3 +75,20 @@ def test_bad_signature_is_rejected() -> None:
     )
     with pytest.raises(AuthenticationError):
         verifier.verify(bad_token)
+
+
+def test_jwks_failure_is_an_authentication_error() -> None:
+    settings = Settings(
+        jwt_issuer="https://issuer.test/",
+        jwt_audience="changeflow-api",
+        jwt_jwks_url="https://issuer.test/jwks",
+    )
+
+    class FailingResolver:
+        def get_signing_key_from_jwt(self, token: str) -> object:
+            del token
+            raise jwt.PyJWKClientError("JWKS unavailable")
+
+    verifier = JwtVerifier(settings, signing_key_resolver=FailingResolver())
+    with pytest.raises(AuthenticationError):
+        verifier.verify("token")

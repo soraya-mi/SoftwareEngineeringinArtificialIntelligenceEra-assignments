@@ -676,7 +676,9 @@
           "INVALID_WORKFLOW",
           "CONCURRENCY_CONFLICT",
           "PRECONDITION_REQUIRED",
-          "DELETION_NOT_SUPPORTED"
+          "DELETION_NOT_SUPPORTED",
+          "INTERNAL_SERVER_ERROR",
+          "HTTP_ERROR"
         ]
       },
       "ProblemDetails": {
