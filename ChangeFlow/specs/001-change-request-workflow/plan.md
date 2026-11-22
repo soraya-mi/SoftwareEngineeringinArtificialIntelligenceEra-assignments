@@ -36,9 +36,7 @@ development uses Uvicorn and a SQLite file
 
 **Project Type**: Backend web service; no frontend
 
-**Performance Goals**: No production throughput SLA is specified. On a local
-development machine with 10,000 stored requests, successful single-request reads and
-mutations should complete within 500 ms at the 95th percentile when uncontended.
+**Performance Goals**: Not specified in the approved feature scope.
 
 **Constraints**: Python 3.12.6 is installed; FastAPI dependencies are not yet installed.
 SQLite has no built-in row-version column, so SQLAlchemy must manage a UUID version
@@ -46,9 +44,8 @@ token. Field maximum lengths and content formats are not approved and must not b
 invented. The service authenticates callers but does not provide public user, credential,
 or role-administration endpoints.
 
-**Scale/Scope**: Assignment-scale service supporting approximately 500 users and
-10,000 Change Requests. Correctness, current-role authorization, and concurrency take
-priority over horizontal scaling.
+**Scale/Scope**: Single assignment-scale backend API. No production throughput or load
+target is approved.
 
 ## Constitution Check
 
@@ -58,7 +55,7 @@ Constitution version: **2.0.0**
 
 | Principle | Gate result | Planning evidence |
 |-----------|-------------|-------------------|
-| I. Specification Before Implementation | PASS | Every planned behavior maps to FR-001 through FR-029; no clarification markers or open questions remain. Implementation still requires Product Owner approval of the plan. |
+| I. Specification Before Implementation | PASS | The Project owner approved the specification and plan on 2026-11-22. Every planned behavior maps to FR-001 through FR-029; no clarification markers or open questions remain. |
 | II. Architecture and Separation of Concerns | PASS | Domain owns invariants and transitions; Application owns use-case orchestration and current-role authorization; Infrastructure owns SQLAlchemy persistence and role retrieval; API owns HTTP mapping only. |
 | III. Security and Authorization | PASS | Every endpoint requires JWT authentication. Identity comes from the validated `sub` claim, while current roles come from server-side state. Self-approval has an explicit denial path and negative test. |
 | IV. Business Rule Integrity | PASS | One aggregate transition matrix covers all allowed states. Content revisions and transition records preserve history; Approved is immutable; invalid and repeated actions are rejected. |
@@ -122,6 +119,7 @@ src/
     │   ├── auth/
     │   │   ├── current_user_role_store.py
     │   │   └── jwt_verifier.py
+    │   ├── config.py
     │   ├── persistence/
     │   │   ├── database.py
     │   │   ├── mappings.py
@@ -129,6 +127,8 @@ src/
     │   │   └── unit_of_work.py
     │   └── migrations/
     │       └── versions/
+    ├── cli/
+    │   └── provision_user.py
     └── api/
         ├── dependencies.py
         ├── error_handlers.py
@@ -139,7 +139,8 @@ src/
 tests/
 ├── unit/
 │   ├── domain/
-│   └── application/
+│   ├── application/
+│   └── infrastructure/
 ├── integration/
 │   ├── api/
 │   ├── persistence/
@@ -182,6 +183,9 @@ There is no frontend.
 
 ### Infrastructure
 
+- Implement typed pydantic-settings configuration in
+  `src/changeflow/infrastructure/config.py`, validating required database and JWT
+  settings before serving requests.
 - Define SQLAlchemy 2 declarative mappings independently of Domain entities.
 - Apply Alembic migrations with foreign keys, unique role assignments, transition
   indexes, and the `(request_id, revision_number)` uniqueness rule.
@@ -190,6 +194,9 @@ There is no frontend.
   when another transaction changed the row.
 - Store active users and role assignments locally so role revocation affects the next
   protected operation even when an existing JWT remains valid.
+- Provide an operator-facing provisioning command in
+  `src/changeflow/cli/provision_user.py`; do not expose user or role administration
+  through the public HTTP API.
 - Save current request state, content revision, and transition record in one
   transaction. Do not retry stale writes or merge conflicting changes.
 
@@ -244,6 +251,7 @@ There is no frontend.
 | Planned workstream | Approved requirements |
 |--------------------|-----------------------|
 | JWT identity, active account, and current server-side roles | FR-001, FR-018, FR-022 |
+| Configuration and supported user/role provisioning | FR-001, FR-022 |
 | Creation, server-assigned owner, content normalization, and Draft/ChangesRequested editing | FR-002, FR-003, FR-004, FR-005, FR-006, FR-011, FR-028 |
 | Draft and revised submission, revision snapshots, and changed-content rule | FR-007, FR-012, FR-021, FR-027 |
 | Approval, self-approval denial, and Request changes | FR-008, FR-009, FR-010, FR-025 |

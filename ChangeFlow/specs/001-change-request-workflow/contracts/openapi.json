@@ -530,7 +530,7 @@
         "properties": {
           "comment": {
             "type": "string",
-            "description": "Trimmed value must be nonempty and is retained unchanged in history."
+            "description": "Validation requires a nonempty value after trimming; the original supplied text is retained unchanged in history."
           }
         }
       },

@@ -31,8 +31,8 @@
 
 ## Notes
 
-- Three unresolved decisions remain in FR-010, FR-023, and FR-025. They require Product Owner choices before planning can begin.
-- Draft deletion is explicitly excluded from the current scope in FR-024 but remains an open Product Owner decision in Q-002.
-- Requirement clarity and complete scope are intentionally pending those decisions. Additional lower-impact decisions are listed in the specification's Open Questions section.
-- The valid transition matrix, current-authorization checks, Approved immutability, transition history, and concurrent-update conflict behavior are fully specified and testable.
-- Items marked incomplete require specification updates through `$speckit-clarify` before `$speckit-plan`.
+- All 16 checks pass after clarification and Project owner approval on 2026-11-22.
+- No clarification markers or open questions remain.
+- The valid transition matrix, current-authorization checks, Approved immutability,
+  transition history, and concurrent-update conflict behavior are fully specified and
+  testable.

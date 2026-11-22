@@ -112,7 +112,7 @@ Immutable record of an accepted state transition.
 | `Action` | enum | `Submit`, `Approve`, or `RequestChanges` |
 | `FromStatus` | enum | State before the accepted action |
 | `ToStatus` | enum | State after the accepted action |
-| `Comment` | string, nullable | Required nonblank only for `RequestChanges`; immutable |
+| `Comment` | string, nullable | For `RequestChanges`, require nonblank after trimming and persist the original text unchanged; immutable |
 | `ReviewedRevisionId` | UUID, nullable | Required for `RequestChanges`; references the submission revision reviewed |
 | `OccurredAt` | UTC date-time | Required |
 
@@ -160,7 +160,8 @@ caller who cannot view a request cannot view its history.
 
 - Require a current Reviewer role.
 - Allow the caller to be the request owner.
-- Require a nonblank comment after trimming.
+- Require a nonblank comment after trimming, but persist the original supplied comment
+  text unchanged.
 - Require current status `PendingReview`.
 - Reference the latest submitted revision as reviewed.
 

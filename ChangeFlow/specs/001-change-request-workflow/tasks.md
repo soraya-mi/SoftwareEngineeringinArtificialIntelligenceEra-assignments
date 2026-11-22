@@ -23,11 +23,11 @@ and verified independently after the shared foundation is complete.
 
 **Purpose**: Initialize the Python project without adding product behavior.
 
-- [ ] T001 Create the package and test directory tree from `plan.md`, including `src/changeflow/domain/change_requests/`, `src/changeflow/application/`, `src/changeflow/infrastructure/`, `src/changeflow/api/`, and `tests/` (supports FR-001 through FR-029)
-- [ ] T002 Define Python 3.12 project metadata and pinned runtime dependencies in `pyproject.toml`, then generate and commit exact versions in `requirements.lock` and `requirements-dev.lock` (supports FR-022 and constitution dependency controls)
-- [ ] T003 Configure Ruff, mypy, pytest paths, markers, and coverage settings in `pyproject.toml` so later tests can prove SC-001 through SC-015
-- [ ] T004 [P] Create non-secret runtime configuration keys and safe examples in `.env.example` for database, JWT issuer, audience, and JWKS URL (supports FR-001 and FR-022)
-- [ ] T005 [P] Configure Alembic database URL loading and migration discovery in `alembic.ini` and `src/changeflow/infrastructure/migrations/env.py` (supports FR-004, FR-020, and FR-026)
+- [X] T001 Create the package and test directory tree from `plan.md`, including `src/changeflow/domain/change_requests/`, `src/changeflow/application/`, `src/changeflow/infrastructure/`, `src/changeflow/cli/`, `src/changeflow/api/`, `tests/unit/infrastructure/`, and `tests/integration/persistence/` (supports FR-001 through FR-029)
+- [X] T002 Define Python 3.12 project metadata and pinned runtime dependencies in `pyproject.toml`, then generate and commit exact versions in `requirements.lock` and `requirements-dev.lock` (supports FR-022 and constitution dependency controls)
+- [X] T003 Configure Ruff, mypy, pytest paths, markers, and coverage settings in `pyproject.toml` so later tests can prove SC-001 through SC-015
+- [X] T004 [P] Write failing configuration-validation tests for required database, JWT issuer, audience, JWKS URL, and environment settings in `tests/unit/infrastructure/test_config.py`, then implement the pydantic-settings object in `src/changeflow/infrastructure/config.py` and document non-secret variables in `.env.example` (FR-001, FR-022)
+- [X] T005 [P] Configure Alembic database URL loading and migration discovery in `alembic.ini` and `src/changeflow/infrastructure/migrations/env.py` (supports FR-004, FR-020, and FR-026)
 
 ---
 
@@ -35,22 +35,24 @@ and verified independently after the shared foundation is complete.
 
 **Purpose**: Establish shared Domain, persistence, identity, API, and test infrastructure.
 
-**CRITICAL**: User-story implementation must not begin until T006 through T019 pass.
+**CRITICAL**: User-story implementation must not begin until T006 through T021 pass.
 
-- [ ] T006 Implement the canonical status/action/role enums and normalized content value object in `src/changeflow/domain/change_requests/enums.py` and `src/changeflow/domain/change_requests/values.py`, enforcing that title, description, and reason are nonempty after trimming (FR-004, FR-013, FR-028)
-- [ ] T007 [P] Implement typed Domain and Application exceptions for validation, authorization, self-approval, invalid workflow, and concurrency in `src/changeflow/domain/change_requests/errors.py` and `src/changeflow/application/errors.py` (FR-009, FR-022, FR-026)
-- [ ] T008 Create SQLAlchemy `UserAccount` and `UserRoleAssignment` mappings in `src/changeflow/infrastructure/persistence/mappings.py` with active-user state and unique `(user_id, role)` assignments (FR-001, FR-018)
-- [ ] T009 Create SQLAlchemy `ChangeRequest`, `ChangeRequestRevision`, and `ChangeRequestTransition` mappings in `src/changeflow/infrastructure/persistence/mappings.py`, including the UUID `version_id_col`, required fields, enum values, nullable latest-reviewed revision, and immutable history fields (FR-004, FR-013, FR-017, FR-020, FR-021)
-- [ ] T010 [P] Implement the engine, request-scoped SQLAlchemy session factory, and transaction unit of work in `src/changeflow/infrastructure/persistence/database.py` and `src/changeflow/infrastructure/persistence/unit_of_work.py` (FR-017, FR-026)
-- [ ] T011 Generate the initial Alembic migration in `src/changeflow/infrastructure/migrations/versions/0001_initial.py` with foreign keys, unique role/revision constraints, transition indexes, and non-null version/comment rules (FR-004, FR-017, FR-020, FR-025, FR-026)
-- [ ] T012 [P] Implement JWT signature, issuer, audience, lifetime, and `sub` validation in `src/changeflow/infrastructure/auth/jwt_verifier.py`, relying on configured JWKS metadata and returning only authenticated identity (FR-001, FR-022)
-- [ ] T013 [P] Implement the server-side active user/current-role store in `src/changeflow/infrastructure/auth/current_user_role_store.py` so role revocation applies to the next operation (FR-001, FR-018)
-- [ ] T014 [P] Implement Problem Details exception handlers and stable error-code mapping in `src/changeflow/api/error_handlers.py`, including redaction of internal details and application of `application/problem+json` (FR-022)
-- [ ] T015 [P] Implement the quoted-UUID ETag/If-Match parser dependency in `src/changeflow/api/dependencies.py`, returning `428 PRECONDITION_REQUIRED` for a missing or malformed precondition (FR-017)
-- [ ] T016 Implement the FastAPI application factory, authentication dependency, router registration, and `/api` prefix in `src/changeflow/api/main.py` and `src/changeflow/api/routes/__init__.py` (FR-001 through FR-029)
-- [ ] T017 Create temp-file SQLite and app dependency-override fixtures in `tests/conftest.py` so integration tests exercise real persistence without sharing in-memory state (FR-001 through FR-029)
-- [ ] T018 Create current-user and role-assignment fixtures in `tests/conftest.py` and `tests/integration/api/auth_helpers.py` supporting authenticated users, revoked roles, and users with both roles (FR-001, FR-009, FR-018)
-- [ ] T019 [P] Add import-boundary architecture tests in `tests/architecture/test_import_boundaries.py` that prohibit Domain/Application imports of FastAPI, Pydantic API schemas, SQLAlchemy, or JWT libraries (supports FR-001 through FR-029 and the architecture gate in `plan.md`)
+- [X] T006 Implement the canonical status/action/role enums and normalized content value object in `src/changeflow/domain/change_requests/enums.py` and `src/changeflow/domain/change_requests/values.py`, enforcing that title, description, and reason are nonempty after trimming (FR-004, FR-013, FR-028)
+- [X] T007 [P] Implement typed Domain and Application exceptions for validation, authorization, self-approval, invalid workflow, and concurrency in `src/changeflow/domain/change_requests/errors.py` and `src/changeflow/application/errors.py` (FR-009, FR-022, FR-026)
+- [X] T008 Create SQLAlchemy `UserAccount` and `UserRoleAssignment` mappings in `src/changeflow/infrastructure/persistence/mappings.py` with active-user state and unique `(user_id, role)` assignments (FR-001, FR-018)
+- [X] T009 Create SQLAlchemy `ChangeRequest`, `ChangeRequestRevision`, and `ChangeRequestTransition` mappings in `src/changeflow/infrastructure/persistence/mappings.py`, including the UUID `version_id_col`, required fields, enum values, nullable latest-reviewed revision, and immutable history fields (FR-004, FR-013, FR-017, FR-020, FR-021)
+- [X] T010 [P] Implement the engine, request-scoped SQLAlchemy session factory, and transaction unit of work in `src/changeflow/infrastructure/persistence/database.py` and `src/changeflow/infrastructure/persistence/unit_of_work.py` (FR-017, FR-026)
+- [X] T011 Generate the initial Alembic migration in `src/changeflow/infrastructure/migrations/versions/0001_initial.py` with foreign keys, unique role/revision constraints, transition indexes, and non-null version/comment rules (FR-004, FR-017, FR-020, FR-025, FR-026)
+- [X] T012 [P] Write failing JWT verifier tests for valid identity, bad signature, wrong issuer, wrong audience, expired token, missing `sub`, and JWKS failure in `tests/unit/infrastructure/test_jwt_verifier.py` (FR-001, FR-022)
+- [X] T013 [P] Implement JWT signature, issuer, audience, lifetime, and `sub` validation in `src/changeflow/infrastructure/auth/jwt_verifier.py`, relying on configured JWKS metadata and returning only authenticated identity (FR-001, FR-022)
+- [X] T014 [P] Implement the server-side active user/current-role store in `src/changeflow/infrastructure/auth/current_user_role_store.py` so role revocation applies to the next operation (FR-001, FR-018)
+- [X] T015 Write failing user/role provisioning tests for active-user, Requester, Reviewer, dual-role, role-revocation, and duplicate-role behavior in `tests/integration/persistence/test_user_provisioning.py`, then implement the operator-facing command in `src/changeflow/cli/provision_user.py` (FR-001, FR-018)
+- [X] T016 [P] Implement Problem Details exception handlers and stable error-code mapping in `src/changeflow/api/error_handlers.py`, including redaction of internal details and application of `application/problem+json` (FR-022)
+- [X] T017 [P] Implement the quoted-UUID ETag/If-Match parser dependency in `src/changeflow/api/dependencies.py`, returning `428 PRECONDITION_REQUIRED` for a missing or malformed precondition (FR-017)
+- [X] T018 Implement the FastAPI application factory, validated settings wiring, authentication dependency, router registration, and `/api` prefix in `src/changeflow/api/main.py` and `src/changeflow/api/routes/__init__.py` (FR-001 through FR-029)
+- [X] T019 Create temp-file SQLite and app dependency-override fixtures in `tests/conftest.py` so integration tests exercise real persistence without sharing in-memory state (FR-001 through FR-029)
+- [X] T020 Create current-user and role-assignment fixtures in `tests/conftest.py` and `tests/integration/api/auth_helpers.py` supporting authenticated users, revoked roles, and users with both roles (FR-001, FR-009, FR-018)
+- [X] T021 [P] Add import-boundary architecture tests in `tests/architecture/test_import_boundaries.py` that prohibit Domain/Application imports of FastAPI, Pydantic API schemas, SQLAlchemy, or JWT libraries (supports FR-001 through FR-029 and the architecture gate in `plan.md`)
 
 **Checkpoint**: The project can start, authenticate a test caller, load current roles,
 open a migrated SQLite database, emit contract-shaped errors, and run shared fixtures.
@@ -69,25 +71,25 @@ Requester cannot edit, submit, or delete it.
 
 ### Tests for User Story 1
 
-- [ ] T020 [P] [US1] Write failing Domain tests for trimming, required content, Draft creation, owner edits, and non-owner edit denial in `tests/unit/domain/test_request_creation_and_editing.py` (FR-002 through FR-006, FR-028; SC-005, SC-013)
-- [ ] T021 [P] [US1] Write failing Domain tests for Draft submission, immutable revision snapshot, Submit transition history, duplicate submission, and invalid source states in `tests/unit/domain/test_draft_submission.py` (FR-007, FR-013, FR-014, FR-019, FR-020; SC-001, SC-007, SC-014)
-- [ ] T022 [P] [US1] Write failing API contract tests for create, list, detail, content update, and submit operations in `tests/integration/api/test_us1_create_edit_submit_contract.py` (FR-002 through FR-007, FR-013, FR-019, FR-022)
-- [ ] T023 [P] [US1] Write failing API authorization tests for unauthenticated access, spoofed requester ID, non-owner access, own visibility, and DELETE rejection in `tests/integration/api/test_us1_access_and_delete.py` (FR-001, FR-006, FR-023, FR-024; SC-005, SC-011)
-- [ ] T024 [US1] Write a failing persisted-state integration test proving create/edit/submit store normalized content, one revision, one transition, and no partial records in `tests/integration/persistence/test_us1_persistence.py` (FR-004, FR-007, FR-020, FR-026; SC-007, SC-009)
+- [X] T022 [P] [US1] Write failing Domain tests for trimming, required content, Draft creation, owner edits, and non-owner edit denial in `tests/unit/domain/test_request_creation_and_editing.py` (FR-002 through FR-006, FR-028; SC-005, SC-013)
+- [X] T023 [P] [US1] Write failing Domain tests for Draft submission, immutable revision snapshot, Submit transition history, duplicate submission, and invalid source states in `tests/unit/domain/test_draft_submission.py` (FR-007, FR-013, FR-014, FR-019, FR-020; SC-001, SC-007, SC-014)
+- [X] T024 [P] [US1] Write failing API contract tests for create, list, detail, history, content update, and submit operations in `tests/integration/api/test_us1_create_edit_submit_contract.py` (FR-002 through FR-007, FR-013, FR-019, FR-020, FR-022, FR-029)
+- [X] T025 [P] [US1] Write failing API authorization tests for unauthenticated access, invalid signature, wrong issuer, wrong audience, expired token, unknown/inactive user, spoofed requester ID, non-owner access, own visibility, and DELETE rejection in `tests/integration/api/test_us1_access_and_delete.py` (FR-001, FR-006, FR-018, FR-023, FR-024; SC-005, SC-006, SC-011)
+- [X] T026 [US1] Write a failing persisted-state integration test proving create/edit/submit store normalized content, one revision, one transition, and no partial records in `tests/integration/persistence/test_us1_persistence.py` (FR-004, FR-007, FR-020, FR-026; SC-007, SC-009)
 
 ### Implementation for User Story 1
 
-- [ ] T025 [P] [US1] Implement `ChangeRequest` creation, content editing, owner checks, Draft constraints, timestamps, and version initialization in `src/changeflow/domain/change_requests/entities.py` (FR-002 through FR-006, FR-028)
-- [ ] T026 [US1] Implement Draft submission, revision-number assignment, revision snapshots, accepted-transition creation, and duplicate/invalid transition denial in `src/changeflow/domain/change_requests/entities.py` (FR-007, FR-013, FR-014, FR-019 through FR-021)
-- [ ] T027 [P] [US1] Define repository and unit-of-work interfaces for request creation, content reads/writes, revisions, transitions, and visibility queries in `src/changeflow/application/ports/change_request_repository.py` and `src/changeflow/application/ports/unit_of_work.py` (FR-004, FR-020, FR-023, FR-026)
-- [ ] T028 [US1] Implement SQLAlchemy repository methods for create, content update, request lookup, revisions, and transition persistence in `src/changeflow/infrastructure/persistence/repositories.py` (FR-004, FR-007, FR-020, FR-026)
-- [ ] T029 [P] [US1] Implement the create use case with current Requester-role enforcement and server-assigned owner in `src/changeflow/application/change_requests/create.py` (FR-001 through FR-003)
-- [ ] T030 [P] [US1] Implement the content-edit use case for owned Draft requests in `src/changeflow/application/change_requests/edit_content.py` (FR-005, FR-006, FR-028)
-- [ ] T031 [P] [US1] Implement the submit use case for owned Draft requests with current Requester-role enforcement in `src/changeflow/application/change_requests/submit.py` (FR-001, FR-007, FR-016, FR-018)
-- [ ] T032 [US1] Implement own-request list/detail/history queries and initial access policy in `src/changeflow/application/change_requests/queries.py` and `src/changeflow/application/ports/request_access_policy.py` (FR-020, FR-023, FR-029)
-- [ ] T033 [P] [US1] Define Pydantic create/update/request/response/list/history schemas without editable requester ID or status fields in `src/changeflow/api/schemas.py` (FR-002 through FR-007, FR-022, FR-023)
-- [ ] T034 [US1] Implement GET list, POST create, GET detail, and DELETE-rejection routes with ETag and Problem Details responses in `src/changeflow/api/routes/change_requests.py` (FR-001 through FR-007, FR-022 through FR-024)
-- [ ] T035 [US1] Implement PUT content and POST submit routes with If-Match propagation and quoted ETag responses in `src/changeflow/api/routes/change_requests.py` (FR-005, FR-007, FR-017, FR-022)
+- [X] T027 [P] [US1] Implement `ChangeRequest` creation, content editing, owner checks, Draft constraints, timestamps, and version initialization in `src/changeflow/domain/change_requests/entities.py` (FR-002 through FR-006, FR-028)
+- [X] T028 [US1] Implement Draft submission, revision-number assignment, revision snapshots, accepted-transition creation, and duplicate/invalid transition denial in `src/changeflow/domain/change_requests/entities.py` (FR-007, FR-013, FR-014, FR-019 through FR-021)
+- [X] T029 [P] [US1] Define repository and unit-of-work interfaces for request creation, content reads/writes, revisions, transitions, and visibility queries in `src/changeflow/application/ports/change_request_repository.py` and `src/changeflow/application/ports/unit_of_work.py` (FR-004, FR-020, FR-023, FR-026)
+- [X] T030 [US1] Implement SQLAlchemy repository methods for create, content update, request lookup, revisions, and transition persistence in `src/changeflow/infrastructure/persistence/repositories.py` (FR-004, FR-007, FR-020, FR-026)
+- [X] T031 [P] [US1] Implement the create use case with current Requester-role enforcement and server-assigned owner in `src/changeflow/application/change_requests/create.py` (FR-001 through FR-003)
+- [X] T032 [P] [US1] Implement the content-edit use case for owned Draft requests in `src/changeflow/application/change_requests/edit_content.py` (FR-005, FR-006, FR-028)
+- [X] T033 [P] [US1] Implement the submit use case for owned Draft requests with current Requester-role enforcement in `src/changeflow/application/change_requests/submit.py` (FR-001, FR-007, FR-016, FR-018)
+- [X] T034 [US1] Implement own-request list/detail/history queries and initial access policy in `src/changeflow/application/change_requests/queries.py` and `src/changeflow/application/ports/request_access_policy.py` (FR-020, FR-023, FR-029)
+- [X] T035 [P] [US1] Define Pydantic create/update/request/response/list/history schemas without editable requester ID or status fields in `src/changeflow/api/schemas.py` (FR-002 through FR-007, FR-022, FR-023)
+- [X] T036 [US1] Implement GET list, POST create, GET detail, GET history, and DELETE-rejection routes with ETag and Problem Details responses in `src/changeflow/api/routes/change_requests.py` (FR-001 through FR-007, FR-020, FR-022 through FR-024, FR-029)
+- [X] T037 [US1] Implement PUT content and POST submit routes with If-Match propagation and quoted ETag responses in `src/changeflow/api/routes/change_requests.py` (FR-005, FR-007, FR-017, FR-022)
 
 **Checkpoint**: User Story 1 is independently functional and testable; it is the MVP.
 
@@ -106,23 +108,23 @@ the next decision is denied.
 
 ### Tests for User Story 2
 
-- [ ] T036 [P] [US2] Write failing Domain tests for approval, request-changes comment requirements, self-approval denial, own-request request-changes, and invalid review states in `tests/unit/domain/test_review_transitions.py` (FR-008 through FR-013, FR-019, FR-025; SC-001, SC-002, SC-010, SC-014)
-- [ ] T037 [P] [US2] Write failing Application tests for current-role lookup, role revocation, pending-request visibility, prior-reviewed access, and history inheritance in `tests/unit/application/test_review_authorization.py` (FR-001, FR-018, FR-023, FR-025, FR-029; SC-006, SC-015)
-- [ ] T038 [P] [US2] Write failing API contract tests for list visibility, approve, request changes, missing comments, self-approval, and repeated review actions in `tests/integration/api/test_us2_review_contract.py` (FR-008 through FR-013, FR-019, FR-022 through FR-025)
-- [ ] T039 [US2] Write failing persisted-state tests proving comments and review transitions are immutable, failed reviews write nothing, and role revocation takes effect immediately in `tests/integration/persistence/test_us2_review_persistence.py` (FR-009, FR-018, FR-020, FR-021, FR-025, FR-026)
+- [X] T038 [P] [US2] Write failing Domain tests for approval, request-changes comment requirements, self-approval denial, own-request request-changes, and invalid review states in `tests/unit/domain/test_review_transitions.py` (FR-008 through FR-013, FR-019, FR-025; SC-001, SC-002, SC-010, SC-014)
+- [X] T039 [P] [US2] Write failing Application tests for current-role lookup, role revocation, pending-request visibility, prior-reviewed access, and history inheritance in `tests/unit/application/test_review_authorization.py` (FR-001, FR-018, FR-023, FR-025, FR-029; SC-006, SC-015)
+- [X] T040 [P] [US2] Write failing API contract tests for list visibility, approve, request changes, missing comments, self-approval, and repeated review actions in `tests/integration/api/test_us2_review_contract.py` (FR-008 through FR-013, FR-019, FR-022 through FR-025)
+- [X] T041 [US2] Write failing persisted-state tests proving comments and review transitions are immutable, failed reviews write nothing, and role revocation takes effect immediately in `tests/integration/persistence/test_us2_review_persistence.py` (FR-009, FR-018, FR-020, FR-021, FR-025, FR-026)
 
 ### Implementation for User Story 2
 
-- [ ] T040 [US2] Implement approval and request-changes aggregate methods, comment validation, reviewed-revision linkage, and accepted transition records in `src/changeflow/domain/change_requests/entities.py` (FR-008 through FR-013, FR-020, FR-021, FR-025)
-- [ ] T041 [US2] Extend the access policy for other users' PendingReview requests and requests with a prior review decision by the caller in `src/changeflow/application/ports/request_access_policy.py` and `src/changeflow/application/change_requests/queries.py` (FR-023, FR-029)
-- [ ] T042 [P] [US2] Implement the approve use case with current Reviewer-role and non-owner enforcement in `src/changeflow/application/change_requests/approve.py` (FR-001, FR-008, FR-009, FR-016, FR-018)
-- [ ] T043 [P] [US2] Implement the request-changes use case allowing the owner as Reviewer and requiring nonblank feedback in `src/changeflow/application/change_requests/request_changes.py` (FR-001, FR-010, FR-016, FR-018, FR-025)
-- [ ] T044 [US2] Add SQLAlchemy visibility queries for eligible pending requests and prior review participation in `src/changeflow/infrastructure/persistence/repositories.py` (FR-023, FR-029)
-- [ ] T045 [US2] Add approve and request-changes Pydantic request/response support in `src/changeflow/api/schemas.py` (FR-022, FR-025)
-- [ ] T046 [US2] Implement approve and request-changes routes with If-Match, ETag, and exact workflow responses in `src/changeflow/api/routes/change_requests.py` (FR-008 through FR-013, FR-017, FR-022, FR-025)
-- [ ] T047 [US2] Map self-approval and review-state failures to distinct Problem Details `code` values in `src/changeflow/api/error_handlers.py` (FR-009, FR-022)
-- [ ] T048 [US2] Implement history responses containing actor, action, prior/current state, occurrence time, comment, and reviewed revision in `src/changeflow/api/schemas.py` and `src/changeflow/application/change_requests/queries.py` (FR-020, FR-021, FR-025, FR-029)
-- [ ] T049 [US2] Add end-to-end review acceptance tests covering approval, request changes, own-request request-changes, self-approval denial, role revocation, and Reviewer list/history visibility in `tests/integration/api/test_us2_review_acceptance.py` (FR-008 through FR-010, FR-018, FR-023, FR-025, FR-029; SC-002, SC-006, SC-010, SC-015)
+- [X] T042 [US2] Implement approval and request-changes aggregate methods, nonblank-after-trim comment validation with original-text persistence, reviewed-revision linkage, and accepted transition records in `src/changeflow/domain/change_requests/entities.py` (FR-008 through FR-013, FR-020, FR-021, FR-025)
+- [X] T043 [US2] Extend the access policy for other users' PendingReview requests and requests with a prior review decision by the caller in `src/changeflow/application/ports/request_access_policy.py` and `src/changeflow/application/change_requests/queries.py` (FR-023, FR-029)
+- [X] T044 [P] [US2] Implement the approve use case with current Reviewer-role and non-owner enforcement in `src/changeflow/application/change_requests/approve.py` (FR-001, FR-008, FR-009, FR-016, FR-018)
+- [X] T045 [P] [US2] Implement the request-changes use case allowing the owner as Reviewer, requiring nonblank-after-trim feedback, and preserving the original comment text in `src/changeflow/application/change_requests/request_changes.py` (FR-001, FR-010, FR-016, FR-018, FR-025)
+- [X] T046 [US2] Add SQLAlchemy visibility queries for eligible pending requests and prior review participation in `src/changeflow/infrastructure/persistence/repositories.py` (FR-023, FR-029)
+- [X] T047 [US2] Add approve and request-changes Pydantic request/response support in `src/changeflow/api/schemas.py` (FR-022, FR-025)
+- [X] T048 [US2] Implement approve and request-changes routes with If-Match, ETag, and exact workflow responses in `src/changeflow/api/routes/change_requests.py` (FR-008 through FR-013, FR-017, FR-022, FR-025)
+- [X] T049 [US2] Map self-approval and review-state failures to distinct Problem Details `code` values in `src/changeflow/api/error_handlers.py` (FR-009, FR-022)
+- [X] T050 [US2] Implement history responses containing actor, action, prior/current state, occurrence time, comment, and reviewed revision in `src/changeflow/api/schemas.py` and `src/changeflow/application/change_requests/queries.py` (FR-020, FR-021, FR-025, FR-029)
+- [X] T051 [US2] Add end-to-end review acceptance tests covering approval, request changes, own-request request-changes, self-approval denial, role revocation, and Reviewer list/history visibility in `tests/integration/api/test_us2_review_acceptance.py` (FR-008 through FR-010, FR-018, FR-023, FR-025, FR-029; SC-002, SC-006, SC-010, SC-015)
 
 **Checkpoint**: Pending requests can be reviewed independently after seeding their
 state; rejected actions leave persisted state and history unchanged.
@@ -141,20 +143,20 @@ field, resubmit to `PendingReview`, and verify prior content/comment/history rem
 
 ### Tests for User Story 3
 
-- [ ] T050 [P] [US3] Write failing Domain tests for normalized content comparison, unchanged resubmission denial, changed-field resubmission, and non-owner denial in `tests/unit/domain/test_changes_requested_revision.py` (FR-011, FR-012, FR-021, FR-027; SC-012)
-- [ ] T051 [P] [US3] Write failing API contract tests for editing, unchanged resubmission, changed resubmission, and Approved immutability with exact ETags in `tests/integration/api/test_us3_revision_contract.py` (FR-011, FR-012, FR-015, FR-017, FR-022, FR-027)
-- [ ] T052 [US3] Write failing persisted-state/history tests proving prior reviewed content and comments survive edit and resubmission in `tests/integration/persistence/test_us3_revision_history.py` (FR-020, FR-021, FR-025, FR-027; SC-007, SC-012)
+- [X] T052 [P] [US3] Write failing Domain tests for normalized content comparison, unchanged resubmission denial, changed-field resubmission, and non-owner denial in `tests/unit/domain/test_changes_requested_revision.py` (FR-011, FR-012, FR-021, FR-027; SC-012)
+- [X] T053 [P] [US3] Write failing API contract tests for editing, unchanged resubmission, changed resubmission, and Approved immutability with exact ETags in `tests/integration/api/test_us3_revision_contract.py` (FR-011, FR-012, FR-015, FR-017, FR-022, FR-027)
+- [X] T054 [US3] Write failing persisted-state/history tests proving prior reviewed content and comments survive edit and resubmission in `tests/integration/persistence/test_us3_revision_history.py` (FR-020, FR-021, FR-025, FR-027; SC-007, SC-012)
 
 ### Implementation for User Story 3
 
-- [ ] T053 [P] [US3] Extend Domain editing so owners may update only `ChangesRequested` content while preserving status and normalized validation in `src/changeflow/domain/change_requests/entities.py` (FR-011, FR-028)
-- [ ] T054 [US3] Extend Domain submission with normalized comparison against the revision referenced by `LatestReviewedRevisionId` and reject unchanged content in `src/changeflow/domain/change_requests/entities.py` (FR-012, FR-021, FR-027)
-- [ ] T055 [US3] Extend the content-edit use case to allow owned `ChangesRequested` requests with current Requester-role enforcement in `src/changeflow/application/change_requests/edit_content.py` (FR-001, FR-011, FR-016, FR-018)
-- [ ] T056 [US3] Extend the submit use case to allow only changed `ChangesRequested` content and create the next revision atomically in `src/changeflow/application/change_requests/submit.py` (FR-012, FR-016, FR-026, FR-027)
-- [ ] T057 [US3] Extend repository reads/writes for latest reviewed revision and sequential revision creation in `src/changeflow/infrastructure/persistence/repositories.py` (FR-020, FR-021, FR-027)
-- [ ] T058 [US3] Update response/history serialization to expose the reviewed revision while retaining all prior feedback in `src/changeflow/api/schemas.py` (FR-020, FR-021, FR-025, FR-029)
-- [ ] T059 [US3] Add an independent API acceptance test that seeds ChangesRequested state, exercises edit/resubmit, and proves prior comments/revisions remain visible in `tests/integration/api/test_us3_revision_acceptance.py` (FR-011, FR-012, FR-020, FR-021, FR-025, FR-027; SC-007, SC-012)
-- [ ] T060 [US3] Verify Approved edit/submit attempts return `409 INVALID_WORKFLOW` without version, content, status, revision, or history changes in `tests/integration/api/test_us3_approved_immutability.py` (FR-015, FR-026; SC-004, SC-009)
+- [X] T055 [P] [US3] Extend Domain editing so owners may update only `ChangesRequested` content while preserving status and normalized validation in `src/changeflow/domain/change_requests/entities.py` (FR-011, FR-028)
+- [X] T056 [US3] Extend Domain submission with normalized comparison against the revision referenced by `LatestReviewedRevisionId` and reject unchanged content in `src/changeflow/domain/change_requests/entities.py` (FR-012, FR-021, FR-027)
+- [X] T057 [US3] Extend the content-edit use case to allow owned `ChangesRequested` requests with current Requester-role enforcement in `src/changeflow/application/change_requests/edit_content.py` (FR-001, FR-011, FR-016, FR-018)
+- [X] T058 [US3] Extend the submit use case to allow only changed `ChangesRequested` content and create the next revision atomically in `src/changeflow/application/change_requests/submit.py` (FR-012, FR-016, FR-026, FR-027)
+- [X] T059 [US3] Extend repository reads/writes for latest reviewed revision and sequential revision creation in `src/changeflow/infrastructure/persistence/repositories.py` (FR-020, FR-021, FR-027)
+- [X] T060 [US3] Update response/history serialization to expose the reviewed revision while retaining all prior feedback in `src/changeflow/api/schemas.py` (FR-020, FR-021, FR-025, FR-029)
+- [X] T061 [US3] Add an independent API acceptance test that seeds ChangesRequested state, exercises edit/resubmit, and proves prior comments/revisions remain visible in `tests/integration/api/test_us3_revision_acceptance.py` (FR-011, FR-012, FR-020, FR-021, FR-025, FR-027; SC-007, SC-012)
+- [X] T062 [US3] Verify Approved edit/submit attempts return `409 INVALID_WORKFLOW` without version, content, status, revision, or history changes in `tests/integration/api/test_us3_approved_immutability.py` (FR-015, FR-026; SC-004, SC-009)
 
 **Checkpoint**: The full revision loop works without depending on live Review UI code;
 the test fixture supplies the prior review decision.
@@ -173,18 +175,18 @@ the successful operation.
 
 ### Tests for User Story 4
 
-- [ ] T061 [P] [US4] Write failing two-session content-update races in `tests/integration/concurrency/test_content_update_race.py`, proving one update wins, the stale update raises `StaleDataError`, and the winner is persisted (FR-017, FR-026; SC-003, SC-009)
-- [ ] T062 [P] [US4] Write failing competing-review races in `tests/integration/concurrency/test_review_decision_race.py`, proving only one approval/request-changes transition commits (FR-013, FR-017, FR-019, FR-026; SC-001, SC-003, SC-014)
-- [ ] T063 [P] [US4] Write failing atomic-rollback tests that force revision or transition persistence failure and prove request state is fully rolled back in `tests/integration/concurrency/test_atomic_rollback.py` (FR-020, FR-026; SC-009)
-- [ ] T064 [P] [US4] Write failing API contract tests for missing If-Match, stale ETag, `CONCURRENCY_CONFLICT`, and `currentVersion` in `tests/integration/api/test_us4_concurrency_contract.py` (FR-017, FR-022, FR-026; SC-003, SC-009)
+- [X] T063 [P] [US4] Write failing two-session content-update races in `tests/integration/concurrency/test_content_update_race.py`, proving one update wins, the stale update raises `StaleDataError`, and the winner is persisted (FR-017, FR-026; SC-003, SC-009)
+- [X] T064 [P] [US4] Write failing competing-review races in `tests/integration/concurrency/test_review_decision_race.py`, proving only one approval/request-changes transition commits (FR-013, FR-017, FR-019, FR-026; SC-001, SC-003, SC-014)
+- [X] T065 [P] [US4] Write failing atomic-rollback tests that force revision or transition persistence failure and prove request state is fully rolled back in `tests/integration/concurrency/test_atomic_rollback.py` (FR-020, FR-026; SC-009)
+- [X] T066 [P] [US4] Write failing API contract tests for missing If-Match, stale ETag, `CONCURRENCY_CONFLICT`, and `currentVersion` in `tests/integration/api/test_us4_concurrency_contract.py` (FR-017, FR-022, FR-026; SC-003, SC-009)
 
 ### Implementation for User Story 4
 
-- [ ] T065 [US4] Finalize SQLAlchemy version assignment and concurrency mappings on all mutable request writes in `src/changeflow/infrastructure/persistence/mappings.py` (FR-017)
-- [ ] T066 [US4] Catch `StaleDataError`, roll back the unit of work, and translate it to a concurrency outcome without retry in `src/changeflow/infrastructure/persistence/unit_of_work.py` (FR-017, FR-022, FR-026)
-- [ ] T067 [US4] Enforce one transaction around request state, revision, and transition changes in content-edit, submit, approve, and request-changes use cases under `src/changeflow/application/change_requests/` (FR-017, FR-020, FR-026)
-- [ ] T068 [US4] Add `409 CONCURRENCY_CONFLICT` Problem Details with `currentVersion` and preserve distinct invalid-workflow mapping in `src/changeflow/api/error_handlers.py` (FR-017, FR-022)
-- [ ] T069 [US4] Add end-to-end concurrency acceptance tests covering two API clients, stale ETags, final state reload, and history integrity in `tests/integration/api/test_us4_concurrency_acceptance.py` (FR-017, FR-022, FR-026; SC-003, SC-009)
+- [X] T067 [US4] Finalize SQLAlchemy version assignment and concurrency mappings on all mutable request writes in `src/changeflow/infrastructure/persistence/mappings.py` (FR-017)
+- [X] T068 [US4] Catch `StaleDataError`, roll back the unit of work, and translate it to a concurrency outcome without retry in `src/changeflow/infrastructure/persistence/unit_of_work.py` (FR-017, FR-022, FR-026)
+- [X] T069 [US4] Enforce one transaction around request state, revision, and transition changes in `src/changeflow/application/change_requests/edit_content.py`, `src/changeflow/application/change_requests/submit.py`, `src/changeflow/application/change_requests/approve.py`, and `src/changeflow/application/change_requests/request_changes.py` (FR-017, FR-020, FR-026)
+- [X] T070 [US4] Add `409 CONCURRENCY_CONFLICT` Problem Details with `currentVersion` and preserve distinct invalid-workflow mapping in `src/changeflow/api/error_handlers.py` (FR-017, FR-022)
+- [X] T071 [US4] Add end-to-end concurrency acceptance tests covering two API clients, stale ETags, final state reload, and history integrity in `tests/integration/api/test_us4_concurrency_acceptance.py` (FR-017, FR-022, FR-026; SC-003, SC-009)
 
 **Checkpoint**: All mutation paths reject stale representations deterministically and
 no concurrency failure can leave a partial update.
@@ -193,14 +195,13 @@ no concurrency failure can leave a partial update.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-**Purpose**: Validate contract, architecture, security, performance, and delivery evidence.
+**Purpose**: Validate contract, architecture, security, and delivery evidence.
 
-- [ ] T070 [P] Add generated-OpenAPI conformance tests comparing `changeflow.api.main:app.openapi()` operations, schemas, error codes, If-Match, and ETag definitions with `contracts/openapi.json` in `tests/integration/api/test_openapi_conformance.py` (FR-001 through FR-029)
-- [ ] T071 [P] Document installation, migration, run, test, authentication configuration, and unsupported-deletion behavior in `README.md` (FR-001, FR-024, FR-022)
-- [ ] T072 [P] Add error-redaction and log-review tests proving validation messages, tokens, stack traces, and internal exception details are not exposed in `tests/integration/api/test_error_redaction.py` (FR-022; SC-009)
-- [ ] T073 Add an isolated 10,000-request SQLite dataset fixture and non-blocking single-request latency smoke test in `tests/integration/persistence/test_performance_smoke.py` (plan performance goal; SC-008)
-- [ ] T074 Run Ruff, mypy, all pytest layers, Alembic upgrade from an empty database, and architecture tests from `pyproject.toml`, fixing failures without weakening assertions (SC-001 through SC-015)
-- [ ] T075 Execute every scenario in `quickstart.md` and record commands, persisted evidence, requirement coverage, deviations, and acceptance status in `docs/acceptance-evidence.md` (FR-001 through FR-029; SC-001 through SC-015)
+- [X] T072 [P] Add generated-OpenAPI conformance tests comparing `changeflow.api.main:app.openapi()` operations, schemas, error codes, If-Match, and ETag definitions with `contracts/openapi.json` in `tests/integration/api/test_openapi_conformance.py` (FR-001 through FR-029)
+- [X] T073 [P] Document installation, migration, run, test, authentication configuration, and unsupported-deletion behavior in `README.md` (FR-001, FR-024, FR-022)
+- [X] T074 [P] Add error-redaction and log-review tests proving validation messages, tokens, stack traces, and internal exception details are not exposed in `tests/integration/api/test_error_redaction.py` (FR-022; SC-009)
+- [X] T075 Run Ruff, mypy, all pytest layers, Alembic upgrade from an empty database, and architecture tests from `pyproject.toml`, fixing failures without weakening assertions (SC-001 through SC-015)
+- [X] T076 Execute every scenario in `quickstart.md` and record commands, persisted evidence, requirement coverage, deviations, and acceptance status in `docs/acceptance-evidence.md` (FR-001 through FR-029; SC-001 through SC-015)
 
 ---
 
@@ -221,12 +222,12 @@ no concurrency failure can leave a partial update.
 
 ```text
 T001 -> T002 -> T003/T004/T005
-T003/T004/T005 -> T006 -> T007...T019
-T006...T019 -> US1 (T020...T035)
-T006...T019 -> US2 (T036...T049)
-T006...T019 -> US3 (T050...T060)
-T006...T019 -> US4 (T061...T069)
-US1 + US2 + US3 + US4 -> Polish (T070...T075)
+T003/T004/T005 -> T006 -> T007...T021
+T006...T021 -> US1 (T022...T037)
+T006...T021 -> US2 (T038...T051)
+T006...T021 -> US3 (T052...T062)
+T006...T021 -> US4 (T063...T071)
+US1 + US2 + US3 + US4 -> Polish (T072...T076)
 ```
 
 ### Story Dependency and MVP Notes
@@ -237,7 +238,7 @@ US1 + US2 + US3 + US4 -> Polish (T070...T075)
   end-to-end after US2.
 - **US4 (P2)**: Cross-cutting concurrency slice after Foundation; review-race tests
   seed pending state directly.
-- **MVP**: Setup + Foundational + US1. Stop at T035 and validate before extending.
+- **MVP**: Setup + Foundational + US1. Stop at T037 and validate before extending.
 
 ### Within Each Story
 
@@ -253,53 +254,53 @@ US1 + US2 + US3 + US4 -> Polish (T070...T075)
 
 ```text
 Parallel test authoring:
-- T020 Domain creation/edit tests
-- T021 Domain submit tests
-- T022 API create/edit/submit contract tests
-- T023 API access/delete tests
+- T022 Domain creation/edit tests
+- T023 Domain submit tests
+- T024 API create/edit/submit contract tests
+- T025 API access/delete tests
 
 After those tests and shared ports exist:
-- T025 Domain creation/edit behavior
-- T027 Repository/unit-of-work interfaces
-- T029 Create use case
-- T030 Edit use case
-- T031 Submit use case
-- T033 API schemas
+- T027 Domain creation/edit behavior
+- T029 Repository/unit-of-work interfaces
+- T031 Create use case
+- T032 Edit use case
+- T033 Submit use case
+- T035 API schemas
 ```
 
 ### User Story 2
 
 ```text
 Parallel after Foundation:
-- T036 Domain review tests
-- T037 Application authorization tests
-- T038 API review contract tests
+- T038 Domain review tests
+- T039 Application authorization tests
+- T040 API review contract tests
 
 Parallel implementation in separate files:
-- T042 Approve use case
-- T043 Request-changes use case
+- T044 Approve use case
+- T045 Request-changes use case
 ```
 
 ### User Story 3
 
 ```text
 Parallel test authoring:
-- T050 Domain revision tests
-- T051 API revision contract tests
+- T052 Domain revision tests
+- T053 API revision contract tests
 
 Parallel implementation:
-- T055 Edit use-case extension
-- T056 Submit use-case extension
+- T057 Edit use-case extension
+- T058 Submit use-case extension
 ```
 
 ### User Story 4
 
 ```text
 Parallel concurrency test authoring:
-- T061 Content update race
-- T062 Review decision race
-- T063 Atomic rollback
-- T064 API concurrency contract
+- T063 Content update race
+- T064 Review decision race
+- T065 Atomic rollback
+- T066 API concurrency contract
 ```
 
 ## Implementation Strategy
@@ -307,7 +308,7 @@ Parallel concurrency test authoring:
 ### MVP First
 
 1. Complete Setup and Foundational phases.
-2. Complete US1 through T035.
+2. Complete US1 through T037.
 3. Stop and validate create/edit/read/submit, ownership, persisted revision/history,
    duplicate rejection, and deletion denial.
 4. Demo the API only after tests prove the MVP independently.

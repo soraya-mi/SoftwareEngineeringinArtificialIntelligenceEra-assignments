@@ -4,7 +4,11 @@
 
 **Created**: 2026-11-22
 
-**Status**: Draft
+**Status**: Approved
+
+**Approved**: 2026-11-22
+
+**Approved By**: Project owner
 
 **Input**: User description: "Build ChangeFlow, an HTTP API for managing change requests with Requester and Reviewer roles, four workflow states, explicit state transitions, self-approval prevention, immutability of approved requests, and protection against concurrent lost updates."
 
@@ -155,7 +159,7 @@ Users receive a clear conflict instead of silently overwriting a newer request w
 - **FR-022**: The system MUST distinguish authentication failures, authorization failures, invalid workflow actions, and concurrency conflicts in its responses while avoiding disclosure of sensitive implementation or credential information.
 - **FR-023**: A Requester MUST be able to view only requests they created. A Reviewer MUST be able to view other users' `PendingReview` requests and requests they previously reviewed, and MUST NOT view other requests outside those categories.
 - **FR-024**: The system MUST NOT support deleting a change request in any state, including `Draft`. A Draft remains available until it is submitted.
-- **FR-025**: A Request changes action MUST require a nonblank review comment. The system MUST retain the comment unchanged in request history for at least the request's lifetime and MUST show it only to users authorized to view the request.
+- **FR-025**: A Request changes action MUST require a review comment that is nonblank after surrounding whitespace is trimmed. The system MUST persist the original comment text unchanged in request history for at least the request's lifetime and MUST show it only to users authorized to view the request.
 - **FR-026**: An accepted state transition MUST take effect completely or not at all. A failed validation, authorization check, or concurrency check MUST NOT leave a partial content, status, or history update.
 - **FR-027**: The system MUST allow submission from `ChangesRequested` only when at least one of title, description, or reason differs from the content most recently reviewed. Otherwise, the system MUST reject the submission and retain `ChangesRequested`.
 - **FR-028**: Request creation and content edits MUST require nonempty title, description, and reason values after surrounding whitespace is removed. Empty or whitespace-only values MUST be rejected.

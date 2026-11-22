@@ -46,7 +46,15 @@ $env:CHANGEFLOW_JWT_JWKS_URL = "https://identity.example/.well-known/jwks.json"
 
 The identity provider must issue access tokens whose `sub` claim maps to a
 pre-provisioned ChangeFlow user. User and role-administration routes are outside this
-feature; tests seed current role assignments through persistence fixtures.
+feature. Provision a local/test user with the operator command:
+
+```powershell
+.\.venv\Scripts\python.exe -m changeflow.cli.provision_user `
+  --user-id "<token-sub>" --roles Requester,Reviewer
+```
+
+The command creates or updates server-side role assignments; it does not issue tokens.
+Tests may call the same provisioning service through persistence fixtures.
 
 ## Migrate, Lint, and Test
 
