@@ -1,0 +1,804 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ChangeFlow Change Request API",
+    "version": "1.0.0",
+    "description": "HTTP contract for the ChangeFlow change-request review workflow. Bearer tokens authenticate callers; roles are resolved from current server-side state."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5001"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Change Requests"
+    }
+  ],
+  "paths": {
+    "/api/change-requests": {
+      "get": {
+        "tags": [
+          "Change Requests"
+        ],
+        "operationId": "listVisibleChangeRequests",
+        "summary": "List change requests visible to the caller",
+        "description": "Requesters receive requests they created. Reviewers additionally receive other users' PendingReview requests and requests they previously reviewed. Results are deduplicated when roles overlap.",
+        "responses": {
+          "200": {
+            "description": "Visible requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeRequestListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Change Requests"
+        ],
+        "operationId": "createChangeRequest",
+        "summary": "Create a Draft change request",
+        "description": "Requires a current Requester role. The server assigns the authenticated caller as requester and assigns Draft status.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChangeRequestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Draft created",
+            "headers": {
+              "Location": {
+                "$ref": "#/components/headers/Location"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationDenied"
+          }
+        }
+      }
+    },
+    "/api/change-requests/{requestId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RequestId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Change Requests"
+        ],
+        "operationId": "getChangeRequest",
+        "summary": "Get a change request",
+        "responses": {
+          "200": {
+            "description": "Request visible to the caller",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationDenied"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Change Requests"
+        ],
+        "operationId": "deleteChangeRequest",
+        "summary": "Rejected: request deletion is not supported",
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "405": {
+            "$ref": "#/components/responses/DeletionNotSupported"
+          }
+        }
+      }
+    },
+    "/api/change-requests/{requestId}/content": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RequestId"
+        }
+      ],
+      "put": {
+        "tags": [
+          "Change Requests"
+        ],
+        "operationId": "updateChangeRequestContent",
+        "summary": "Edit Draft or ChangesRequested content",
+        "description": "Requires the request owner, a current Requester role, and current status Draft or ChangesRequested.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChangeRequestContentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Content updated",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationDenied"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/WorkflowOrConcurrencyConflict"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        }
+      }
+    },
+    "/api/change-requests/{requestId}/submit": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RequestId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Change Requests"
+        ],
+        "operationId": "submitChangeRequest",
+        "summary": "Submit a Draft or revised request",
+        "description": "Requires the request owner and a current Requester role. ChangesRequested requires content different from the latest reviewed revision.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request moved to PendingReview",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationDenied"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/WorkflowOrConcurrencyConflict"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        }
+      }
+    },
+    "/api/change-requests/{requestId}/approve": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RequestId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Change Requests"
+        ],
+        "operationId": "approveChangeRequest",
+        "summary": "Approve another user's PendingReview request",
+        "description": "Requires a current Reviewer role. Self-approval is always forbidden, including for dual-role users.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request Approved",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeRequestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationDenied"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/WorkflowOrConcurrencyConflict"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        }
+      }
+    },
+    "/api/change-requests/{requestId}/request-changes": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RequestId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Change Requests"
+        ],
+        "operationId": "requestChangeRequestChanges",
+        "summary": "Request changes with mandatory feedback",
+        "description": "Requires a current Reviewer role and a nonblank comment. The request owner may request changes on their own request.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestChangesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request moved to ChangesRequested",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationDenied"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/WorkflowOrConcurrencyConflict"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        }
+      }
+    },
+    "/api/change-requests/{requestId}/history": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RequestId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Change Requests"
+        ],
+        "operationId": "getChangeRequestHistory",
+        "summary": "Get transition history and reviewer feedback",
+        "description": "History inherits the authorization of the underlying Change Request.",
+        "responses": {
+          "200": {
+            "description": "Ordered transition history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeRequestHistoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationDenied"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
+      "RequestId": {
+        "name": "requestId",
+        "in": "path",
+        "required": true,
+        "description": "Change Request UUID",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "IfMatch": {
+        "name": "If-Match",
+        "in": "header",
+        "required": true,
+        "description": "Current Change Request ETag, supplied as a quoted UUID concurrency token.",
+        "schema": {
+          "type": "string",
+          "pattern": "^\"[0-9a-fA-F-]{36}\"$"
+        }
+      }
+    },
+    "headers": {
+      "ETag": {
+        "description": "Current Change Request concurrency token as a quoted UUID.",
+        "schema": {
+          "type": "string",
+          "pattern": "^\"[0-9a-fA-F-]{36}\"$"
+        }
+      },
+      "Location": {
+        "description": "Canonical URL of the created Change Request.",
+        "schema": {
+          "type": "string",
+          "format": "uri-reference"
+        }
+      }
+    },
+    "schemas": {
+      "ChangeRequestStatus": {
+        "type": "string",
+        "enum": [
+          "Draft",
+          "PendingReview",
+          "Approved",
+          "ChangesRequested"
+        ]
+      },
+      "CreateChangeRequestRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "description",
+          "reason"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Trimmed value must be nonempty."
+          },
+          "description": {
+            "type": "string",
+            "description": "Trimmed value must be nonempty."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Trimmed value must be nonempty."
+          }
+        }
+      },
+      "UpdateChangeRequestContentRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "description",
+          "reason"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Trimmed value must be nonempty."
+          },
+          "description": {
+            "type": "string",
+            "description": "Trimmed value must be nonempty."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Trimmed value must be nonempty."
+          }
+        }
+      },
+      "RequestChangesRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "comment"
+        ],
+        "properties": {
+          "comment": {
+            "type": "string",
+            "description": "Trimmed value must be nonempty and is retained unchanged in history."
+          }
+        }
+      },
+      "ChangeRequestResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "requesterId",
+          "title",
+          "description",
+          "reason",
+          "status",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requesterId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ChangeRequestStatus"
+          },
+          "version": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChangeRequestListResponse": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeRequestResponse"
+            }
+          }
+        }
+      },
+      "ChangeRequestTransitionResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "actorId",
+          "action",
+          "fromStatus",
+          "toStatus",
+          "occurredAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actorId": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "Submit",
+              "Approve",
+              "RequestChanges"
+            ]
+          },
+          "fromStatus": {
+            "$ref": "#/components/schemas/ChangeRequestStatus"
+          },
+          "toStatus": {
+            "$ref": "#/components/schemas/ChangeRequestStatus"
+          },
+          "comment": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reviewedRevisionId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChangeRequestHistoryResponse": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "items"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeRequestTransitionResponse"
+            }
+          }
+        }
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "AUTHENTICATION_REQUIRED",
+          "AUTHORIZATION_DENIED",
+          "SELF_APPROVAL_FORBIDDEN",
+          "VALIDATION_FAILED",
+          "RESOURCE_NOT_FOUND",
+          "INVALID_WORKFLOW",
+          "CONCURRENCY_CONFLICT",
+          "PRECONDITION_REQUIRED",
+          "DELETION_NOT_SUPPORTED"
+        ]
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "required": [
+          "title",
+          "status",
+          "code"
+        ],
+        "properties": {
+          "type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri-reference"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "instance": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri-reference"
+          },
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "currentVersion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Present only for CONCURRENCY_CONFLICT."
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "responses": {
+      "AuthenticationRequired": {
+        "description": "Authentication is missing or invalid.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "AuthorizationDenied": {
+        "description": "The caller is authenticated but is not authorized for the action. Self-approval uses code SELF_APPROVAL_FORBIDDEN.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "ValidationFailed": {
+        "description": "Malformed input or invalid required content.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "No Change Request exists with the supplied ID.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "WorkflowOrConcurrencyConflict": {
+        "description": "Either the current request state does not permit the action (INVALID_WORKFLOW) or the supplied version is stale (CONCURRENCY_CONFLICT). Repeated successful actions return INVALID_WORKFLOW.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "PreconditionRequired": {
+        "description": "If-Match is required for this mutation.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      },
+      "DeletionNotSupported": {
+        "description": "Request deletion is not supported.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    }
+  }
+}
