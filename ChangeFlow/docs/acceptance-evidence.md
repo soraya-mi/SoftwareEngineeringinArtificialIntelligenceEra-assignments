@@ -25,10 +25,10 @@ $env:CHANGEFLOW_DATABASE_URL = "sqlite:///<temporary-db>"
 |-------|--------|
 | Ruff | PASS — no violations |
 | mypy | PASS — 44 source files, no issues |
-| pytest | PASS — 49 tests |
-| Coverage | 87% overall statement/branch coverage |
+| pytest | PASS — 55 tests |
+| Coverage | 88% overall statement/branch coverage |
 | Alembic | PASS — empty SQLite upgraded to revision `0001` |
-| OpenAPI operation conformance | PASS — all generated operation IDs match the checked-in contract |
+| OpenAPI conformance | PASS — operation IDs, error-code enum, Problem Details responses, If-Match, and ETag definitions match the checked-in contract |
 
 ## Requirement Evidence
 
@@ -43,6 +43,7 @@ $env:CHANGEFLOW_DATABASE_URL = "sqlite:///<temporary-db>"
 | Concurrency and atomicity | Real SQLite sessions preload the same request and version; exactly one write succeeds, the stale write raises a concurrency conflict, and forced transition failure rolls the request state back. |
 | Deletion exclusion | API tests verify DELETE returns `405 DELETION_NOT_SUPPORTED` and preserves the request. |
 | Error safety | Tests verify validation/authentication responses do not echo submitted secrets or tokens. |
+| Convergence verification | Repeated approval, JWKS failure, rejected-feedback persistence, approved edit/submit immutability, API token failures, and complete OpenAPI response metadata are tested. |
 
 ## API Scenarios Verified
 
