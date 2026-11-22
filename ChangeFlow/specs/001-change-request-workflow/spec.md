@@ -17,6 +17,9 @@
 - Q: What feedback must be recorded when a Reviewer requests changes, and how should it be retained? → A: Require a nonblank comment; retain it unchanged in request history and show it to the Requester and authorized Reviewers.
 - Q: Should a Requester be able to delete their own Draft change request? → A: Do not support Draft deletion in the initial feature; Drafts remain until submitted.
 - Q: Must a Requester change at least one content field before resubmitting a `ChangesRequested` request? → A: Require at least one title, description, or reason value to differ from the content most recently reviewed before resubmission.
+- Q: What validation should apply to a change request's title, description, and reason? → A: Require all three fields, trim surrounding whitespace, and reject empty or whitespace-only values.
+- Q: How should the system respond when a user repeats an action that already succeeded, such as submitting an already-pending request? → A: Return an explicit invalid-workflow response, preserve the already-achieved state, and create no duplicate transition or record.
+- Q: Who may view a request's transition history and review feedback? → A: Only users authorized to view the request under the existing access rules may view its history and feedback.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -35,10 +38,12 @@ A Requester creates a change request, records why the change is needed, refines 
 3. **Given** a Requester owns a `Draft` request, **When** they submit it, **Then** it enters `PendingReview`.
 4. **Given** another authenticated user does not own a `Draft` request, **When** they try to edit or submit that request, **Then** the operation is denied and the request content and status remain unchanged.
 5. **Given** a caller does not have a current Requester role, **When** they try to create a request, **Then** the operation is denied and no request is created.
-6. **Given** a request is already `PendingReview`, **When** any user tries to submit it again, **Then** no duplicate request is created, the status remains `PendingReview`, and the invalid request is rejected.
-7. **Given** a Requester owns a request, **When** they view it, **Then** they can see its content and current status.
+6. **Given** a request is already `PendingReview`, **When** any user tries to submit it again, **Then** an explicit invalid-workflow response is returned, the status remains `PendingReview`, and no duplicate transition or record is created.
+7. **Given** a Requester owns a request, **When** they view it, **Then** they can see its content, current status, transition history, and review feedback.
 8. **Given** a Requester does not own a request, **When** they try to view it, **Then** access is denied.
 9. **Given** a Requester owns a `Draft` request, **When** they try to delete it, **Then** deletion is denied and the request remains unchanged.
+10. **Given** a caller with a current Requester role, **When** they create or edit a request with an empty or whitespace-only title, description, or reason, **Then** validation fails and no content change is retained.
+11. **Given** a user is not authorized to view a request, **When** they try to view its history or review feedback, **Then** access is denied.
 
 ---
 
@@ -61,6 +66,7 @@ A Reviewer examines a pending request, approves another user's request, or reque
 7. **Given** a caller lacks a current Reviewer role, **When** they try to approve or request changes, **Then** the operation is denied and the request status remains unchanged.
 8. **Given** a request is not `PendingReview`, **When** a Reviewer tries to approve it or request changes, **Then** the operation is denied and the request status remains unchanged.
 9. **Given** a Reviewer previously reviewed a request that is no longer `PendingReview`, **When** they view it, **Then** they can see the request and its history.
+10. **Given** a request is already `Approved`, **When** a Reviewer tries to approve it again, **Then** an explicit invalid-workflow response is returned and the request remains `Approved` without another transition.
 
 ---
 
@@ -104,12 +110,14 @@ Users receive a clear conflict instead of silently overwriting a newer request w
 - A user loses a role after login or while a request is pending; any later protected action must be denied based on current authorization.
 - An `Approved` request receives any edit, submission, approval, or request-changes action; every such action must be denied and the approved content must remain unchanged.
 - A request already in a state that does not permit the requested action receives that action; the invalid transition must be rejected rather than treated as a no-op success.
+- A user repeats a previously successful submit, approve, or request-changes action; the system must return an explicit invalid-workflow response, retain the achieved state, and create no duplicate transition or history record.
 - A Reviewer requests changes without a nonblank comment; the request must remain `PendingReview` and no review-history entry may be created.
 - A Requester changes no content after a request enters `ChangesRequested`; resubmission must be denied and the request must remain `ChangesRequested`.
 - A user with both roles requests changes on their own `PendingReview` request; the transition is allowed, while any attempt by that user to approve the same request remains denied.
 - A Requester tries to delete their `Draft`; the operation is denied and the Draft remains available with unchanged content and status.
 - A Requester tries to view another user's request, or a Reviewer tries to view a request they have neither reviewed nor received for pending review; access must be denied.
-- A blank title, description, or reason is submitted. Required-field and content-validation behavior is unresolved in Q-005.
+- A user who cannot view a request tries to view its transition history or review feedback; access must be denied.
+- A request is created or edited with an empty or whitespace-only title, description, or reason; validation must fail, and no new request or content change may be retained.
 
 ## Requirements *(mandatory)*
 
@@ -141,20 +149,22 @@ Users receive a clear conflict instead of silently overwriting a newer request w
 - **FR-016**: Every state-transition attempt MUST validate the authenticated caller, the caller's current role, the caller's relationship to the request, and the request's current state before any state change becomes effective.
 - **FR-017**: The system MUST protect every mutable request from concurrent lost updates. An operation based on an outdated request state MUST fail with a concurrency conflict and MUST NOT overwrite the newer content or status.
 - **FR-018**: If a caller's role is revoked, subsequent protected actions that require that role MUST be denied without changing the request.
-- **FR-019**: A repeated submission of a request already in `PendingReview` MUST NOT create a second request or repeat the transition. The rejected-attempt response semantics remain unresolved in Q-006.
+- **FR-019**: A repeated submission of a request already in `PendingReview`, or any other repeated action that already succeeded, MUST return an explicit invalid-workflow response, create no duplicate request, transition, or history record, and preserve the already-achieved state.
 - **FR-020**: The system MUST retain an auditable history for every accepted state transition, including the request affected, actor, action, prior state, resulting state, and occurrence time.
 - **FR-021**: The system MUST preserve prior request content, before-submission review comments, and transition history when a `ChangesRequested` request is edited and resubmitted.
 - **FR-022**: The system MUST distinguish authentication failures, authorization failures, invalid workflow actions, and concurrency conflicts in its responses while avoiding disclosure of sensitive implementation or credential information.
 - **FR-023**: A Requester MUST be able to view only requests they created. A Reviewer MUST be able to view other users' `PendingReview` requests and requests they previously reviewed, and MUST NOT view other requests outside those categories.
 - **FR-024**: The system MUST NOT support deleting a change request in any state, including `Draft`. A Draft remains available until it is submitted.
-- **FR-025**: A Request changes action MUST require a nonblank review comment. The system MUST retain the comment unchanged in request history for at least the request's lifetime and MUST show it to the Requester and authorized Reviewers.
+- **FR-025**: A Request changes action MUST require a nonblank review comment. The system MUST retain the comment unchanged in request history for at least the request's lifetime and MUST show it only to users authorized to view the request.
 - **FR-026**: An accepted state transition MUST take effect completely or not at all. A failed validation, authorization check, or concurrency check MUST NOT leave a partial content, status, or history update.
 - **FR-027**: The system MUST allow submission from `ChangesRequested` only when at least one of title, description, or reason differs from the content most recently reviewed. Otherwise, the system MUST reject the submission and retain `ChangesRequested`.
+- **FR-028**: Request creation and content edits MUST require nonempty title, description, and reason values after surrounding whitespace is removed. Empty or whitespace-only values MUST be rejected.
+- **FR-029**: Transition history and review feedback MUST inherit request access. A user authorized to view a request MUST be able to view its history and feedback, and a user not authorized to view the request MUST be denied access to both.
 
 ### Key Entities
 
 - **User**: An authenticated actor with a current identity and zero or more roles. Requester and Reviewer are independent roles that may be held at the same time.
-- **Change Request**: A request identified by its requester, title, description, reason, and current status, with enough known state to determine whether a competing action is based on outdated information.
+- **Change Request**: A request identified by its requester, required nonempty title, description, and reason, and current status, with enough known state to determine whether a competing action is based on outdated information.
 - **Transition Record**: An auditable record of an accepted workflow action, including its actor, prior state, resulting state, action, and occurrence time.
 - **Review Feedback**: A required, nonblank comment associated with a request-changes decision. It is immutable, belongs to the transition history, and is visible to the Requester and authorized Reviewers.
 
@@ -174,6 +184,9 @@ Users receive a clear conflict instead of silently overwriting a newer request w
 - **SC-010**: 100% of accepted Request changes actions contain a nonblank comment that remains unchanged and is visible to the Requester and authorized Reviewers.
 - **SC-011**: 100% of requests to delete any change request are denied, and the targeted request remains available with unchanged content and status.
 - **SC-012**: 100% of resubmissions with no content change after review are rejected and leave the request in `ChangesRequested`.
+- **SC-013**: 100% of create or edit attempts containing an empty or whitespace-only title, description, or reason are rejected without retaining the invalid content.
+- **SC-014**: 100% of repeated actions return an explicit invalid-workflow result, preserve the already-achieved state, and create no duplicate transition or history record.
+- **SC-015**: 100% of history and review-feedback access attempts match the requester's authorization to view the underlying request.
 
 ## Assumptions
 
@@ -183,15 +196,5 @@ Users receive a clear conflict instead of silently overwriting a newer request w
 - Editing a request changes only title, description, or reason. Status and requester identity cannot be edited directly.
 - A Reviewer may approve eligible requests created by another user and may request changes on eligible requests, including their own, according to the clarified access rule.
 - Transition history and required review comments are retained for at least the request's lifetime, as required by the ChangeFlow Constitution and the clarified review-feedback rule.
-- The exact rules for blank values, content length, and content normalization remain open in Q-005; no additional validation rule is silently introduced here.
-
-## Open Questions
-
-These decisions require Product Owner approval. Proposed defaults are recorded only to support clarification and are not approved requirements.
-
-- **Q-005 - Content validation**: Are title, description, and reason all mandatory? May they contain only whitespace? Are there maximum lengths or allowed formats?
-  - Proposed default: Require all three, reject whitespace-only values, trim surrounding whitespace, and defer maximum lengths until Product Owner approval.
-- **Q-006 - Duplicate-action response**: When a submission or review action is repeated after the first action succeeded, should the API return an explicit invalid-transition/conflict response or behave idempotently and return the already-achieved outcome?
-  - Proposed default: Return an explicit invalid-transition result while preserving the already-achieved state and creating no duplicate record.
-- **Q-008 - Audit visibility**: Who may view transition history and review feedback beyond the Requester and the Reviewers who acted?
-  - Proposed default: Limit access to the Requester and authorized Reviewers.
+- Title, description, and reason are required after surrounding whitespace is removed. Maximum lengths and content formats are not part of the approved specification.
+- Transition history and review feedback inherit request visibility; there is no broader audit-viewing role in this feature.
